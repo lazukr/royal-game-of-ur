@@ -386,13 +386,18 @@ class RoyalUr(ConnectionListener):
 				exit()
 
 			if event.type == pygame.MOUSEBUTTONDOWN:
+				print("REGISTERED MOUSEBUTTONDOWN EVENT")
 				if (in_board and self.turn and self.justPlaced <= 0 and 
 					self.move > 0 and self.board_hl[by][bx] and self.board_sel[by][bx]) and not self.hasPlaced:
+					print("ATTEMPTING TO PLACE IN GRID: ", bx, by)
 					self.justPlaced = 10
 					connection.Send({"action": "place", "x": bx, "y": by, "num": self.num, "move": self.move})
+					print("PLACE IN GRID SENT")
 
 				if self.roll_hl and self.turn and self.justPlaced <= 0:
+					print("ATTEMPTING TO ROLL")
 					connection.Send({"action": "roll", "num": self.num, "hasRolled": self.hasRolled})
+					print("ATTEMPTING TO ROLL SENT")
 					self.justPlaced = 10
 
 		# update the screen
