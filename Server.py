@@ -61,7 +61,7 @@ GTOP = {
 }
 
 rosette = ["00", "02", "31", "60", "62"]
-
+NUM_OF_STONES = 1
 
 class ClientChannel(Channel):
 
@@ -107,9 +107,11 @@ class UrServer(Server):
 			print("connection", channel)
 
 		else:
-			self.game.player1 = channel
-			self.game.player0.Send({"action": "startgame","player":0, "numOfpieces": 7})
-			self.game.player1.Send({"action": "startgame","player":1, "numOfpieces": 7})
+			self.game.players[1] = channel
+			for x in range(2):
+				self.game.players[x].Send({"action": "startgame","player":x, "numOfpieces": NUM_OF_STONES})
+			# self.game.player0.Send({"action": "startgame","player":0, "numOfpieces": NUM_OF_STONES})
+			# self.game.player1.Send({"action": "startgame","player":1, "numOfpieces": NUM_OF_STONES})
 			self.ongoingGame = self.game
 			self.game = None
 
@@ -137,16 +139,19 @@ class Game:
 		self.turn = 0
 
 		# board
+		self.boards = [[[0 for x in range(8)] for y in range(3)] for z in range(2)]
+
 		self.board = [[0 for x in range(8)] for y in range(3)]
 		self.board_alt = [[0 for x in range(8)] for y in range(3)]
 		self.slt_mchn = [False for x in range(4)]
 		# 0th is player 0, 1 in player 1
 		self.playerpaths = [[False for x in range(15)] for y in range(2)]
-		self.playerpieces = [7, 7]
+		self.playerpieces = [NUM_OF_STONES, NUM_OF_STONES]
 		self.playerscores = [0, 0]
 		self.move = -1
 
 		# initialize players
+		self.players = [player0, None]
 		self.player0 = player0
 		self.player1 = None
 
@@ -175,7 +180,7 @@ class Game:
 
 			# placing new piece
 			if (self.board[real_y][x] == 0 and 
-				self.playerscores[num] + self.playerpaths[num].count(True) < 7):
+				self.playerscores[num] + self.playerpaths[num].count(True) < NUM_OF_STONES):
 
 				# place new piece
 
@@ -194,26 +199,24 @@ class Game:
 				self.playerpieces[num] -= 1
 				self.board[ycoord[num]][x] = num + 1
 				self.board_alt[ycoord[num^1]][x] = num + 1
-				self.player0.Send({"action": "place", "board": self.board, "num": num,
-						"hasPlaced": playersHasPlaced[0], "playerpieces": self.playerpieces})
-				self.player1.Send({"action": "place", "board": self.board_alt,"num": num, 
-						"hasPlaced": playersHasPlaced[1], "playerpieces": self.playerpieces})
+
+				for x in range(2):
+					self.players[x].Send({"action": "place", "board": self.board, "num": num,
+						"hasPlaced": playersHasPlaced[x], "playerpieces": self.playerpieces})
+				# self.player0.Send({"action": "place", "board": self.board, "num": num,
+				# 		"hasPlaced": playersHasPlaced[0], "playerpieces": self.playerpieces})
+				# self.player1.Send({"action": "place", "board": self.board_alt,"num": num, 
+				# 		"hasPlaced": playersHasPlaced[1], "playerpieces": self.playerpieces})
 
 				# allow the next turn
 				if str(x) + str(y) not in rosette:
 						self.turn = 0 if self.turn else 1
 				self._nextTurn(self.turn)
-
-				print(self.board)
-
-
 			
 
 			# check if the stone does exist in that position according to the server
 			# and the planned move is not over the maximum
 			elif self.playerpaths[num][path_pos] and path_pos + move < 14:
-
-				
 
 				# finds right label for PTOG conversion
 				label = "m" if num == 0 else "e"
@@ -241,10 +244,13 @@ class Game:
 					self.board[new_ycoord[0]][new_x] = num + 1
 					self.board_alt[new_ycoord[1]][new_x] = num + 1
 				
-					self.player0.Send({"action": "place", "board": self.board, "num": num,
-						"hasPlaced": playersHasPlaced[0], "playerpieces": self.playerpieces})
-					self.player1.Send({"action": "place", "board": self.board_alt, "num": num, 
-						"hasPlaced": playersHasPlaced[1], "playerpieces": self.playerpieces})
+					for x in range(2):
+						self.players[x]..Send({"action": "place", "board": self.board, "num": num,
+						"hasPlaced": playersHasPlaced[x], "playerpieces": self.playerpieces})
+					# self.player0.Send({"action": "place", "board": self.board, "num": num,
+					# 	"hasPlaced": playersHasPlaced[0], "playerpieces": self.playerpieces})
+					# self.player1.Send({"action": "place", "board": self.board_alt, "num": num, 
+					# 	"hasPlaced": playersHasPlaced[1], "playerpieces": self.playerpieces})
 
 					# allow the next turn if not rosette, else go again
 					if str(new_x) + str(new_y) not in rosette:
@@ -264,6 +270,10 @@ class Game:
 					self.playerpaths[num][GTOP[str(y)+str(x)][1]] = False
 					self.playerpieces[num^1] += 1
 					self.playerpaths[num^1][GTOP[str(new_y)+str(new_x)][1]] = False
+
+					for x in range(2):
+						self.players[x].Send({"action": "place", "board": self.board, "num": num,
+						"hasPlaced": playersHasPlaced[x], "playerpieces": self.playerpieces})
 
 					self.player0.Send({"action": "place", "board": self.board, "num": num,
 						"hasPlaced": playersHasPlaced[0], "playerpieces": self.playerpieces})
@@ -290,13 +300,18 @@ class Game:
 				self.player1.Send({"action": "place", "board": self.board_alt,"num": num, 
 						"hasPlaced": playersHasPlaced[1], "playerpieces": self.playerpieces})
 
-				self.player0.Send({"action": "score", "player0": self.playerscores[0],
-					"player1": self.playerscores[1]})
-				self.player1.Send({"action": "score", "player0": self.playerscores[0],
-					"player1": self.playerscores[1]})
+				if self.playerscores[num] == NUM_OF_STONES:
 
-				# allow the next turn
-				self._nextTurn(self.turn)
+
+
+				else:
+
+					self.player0.Send({"action": "score", "player0": self.playerscores[0],
+						"player1": self.playerscores[1]})
+					self.player1.Send({"action": "score", "player0": self.playerscores[0],
+						"player1": self.playerscores[1]})
+					# allow the next turn
+					self._nextTurn(self.turn)
 
 	def lorTurn(self, lorTurn, num):
 		print(lorTurn)
@@ -315,8 +330,10 @@ class Game:
 		playerTurns[turn] = True
 
 		# relays the next turn
-		self.player0.Send({"action": "yourTurn", "torf": playerTurns[0]})
-		self.player1.Send({"action": "yourTurn", "torf": playerTurns[1]})
+		for x in range(2):
+			self.players[x].Send({"action": "yourTurn", "torf": playerTurns[x]})
+		# self.player0.Send({"action": "yourTurn", "torf": playerTurns[0]})
+		# self.player1.Send({"action": "yourTurn", "torf": playerTurns[1]})
 
 		for x in range(3):
 			print(self.board[x])
@@ -340,20 +357,43 @@ class Game:
 
 			# relay the rolls back to both users and update the relevant 
 			# player's hasRolled variable
-			self.player0.Send({"action": "roll", "rolls": self.slt_mchn, "hasRolled": playerHasRolled[0], "num": num})
-			self.player1.Send({"action": "roll", "rolls": self.slt_mchn, "hasRolled": playerHasRolled[1], "num": num})
+
+			for x in range(2):
+				self.players[x].Send({"action": "roll", "rolls": self.slt_mchn, "hasRolled": playerHasRolled[x], "num": num})
+			# self.player0.Send({"action": "roll", "rolls": self.slt_mchn, "hasRolled": playerHasRolled[0], "num": num})
+			# self.player1.Send({"action": "roll", "rolls": self.slt_mchn, "hasRolled": playerHasRolled[1], "num": num})
 
 			# check the valid spaces to allow highlights
 			valid = []
 			for x in range(14):
-				if self.playerpaths[num][x] or x == move - 1:
+				# first case checks normal stone advancements
+				# second case checks specifically the rosette case
+				# third case checks when placing onto board
+				if (x + move < 15 and self.playerpaths[num][x] and # first
+					not self.playerpaths[num][x + move] and not x + move == 7 
+					or 
+					x + move < 15 and self.playerpaths[num][x] and x + move == 7 
+					and not (self.playerpaths[0][7] or self.playerpaths[1][7]) 
+					or 
+					x == move - 1 and not self.playerpaths[num][move - 1] and 
+					self.playerscores[num] + self.playerpaths[num].count(True) < NUM_OF_STONES): 
 					print(PTOG["m"+ str(x)])
 					valid.append(PTOG["m"+str(x)])
+
+
+			numOfValid = len(valid)
+			
+
 					
 			if num == 0:
 				self.player0.Send({"action": "valid", "moveable": valid})
 			else:
 				self.player1.Send({"action": "valid", "moveable": valid})
+
+
+			if numOfValid == 0:
+				self.lorTurn("lost", num)
+
 
 
 
