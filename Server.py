@@ -61,7 +61,7 @@ GTOP = {
 }
 
 rosette = ["00", "02", "31", "60", "62"]
-NUM_OF_STONES = 1
+NUM_OF_STONES = 7
 
 class ClientChannel(Channel):
 
