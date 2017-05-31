@@ -200,13 +200,13 @@ class Game:
 				self.board[ycoord[num]][x] = num + 1
 				self.board_alt[ycoord[num^1]][x] = num + 1
 
-				for x in range(2):
-					self.players[x].Send({"action": "place", "board": self.board, "num": num,
-						"hasPlaced": playersHasPlaced[x], "playerpieces": self.playerpieces})
-				# self.player0.Send({"action": "place", "board": self.board, "num": num,
-				# 		"hasPlaced": playersHasPlaced[0], "playerpieces": self.playerpieces})
-				# self.player1.Send({"action": "place", "board": self.board_alt,"num": num, 
-				# 		"hasPlaced": playersHasPlaced[1], "playerpieces": self.playerpieces})
+				# for x in range(2):
+				# 	self.players[x].Send({"action": "place", "board": self.board, "num": num,
+				# 		"hasPlaced": playersHasPlaced[x], "playerpieces": self.playerpieces})
+				self.players[0].Send({"action": "place", "board": self.board, "num": num,
+						"hasPlaced": playersHasPlaced[0], "playerpieces": self.playerpieces})
+				self.players[1].Send({"action": "place", "board": self.board_alt,"num": num, 
+						"hasPlaced": playersHasPlaced[1], "playerpieces": self.playerpieces})
 
 				# allow the next turn
 				if str(x) + str(y) not in rosette:
@@ -244,13 +244,13 @@ class Game:
 					self.board[new_ycoord[0]][new_x] = num + 1
 					self.board_alt[new_ycoord[1]][new_x] = num + 1
 				
-					for x in range(2):
-						self.players[x]..Send({"action": "place", "board": self.board, "num": num,
-						"hasPlaced": playersHasPlaced[x], "playerpieces": self.playerpieces})
-					# self.player0.Send({"action": "place", "board": self.board, "num": num,
-					# 	"hasPlaced": playersHasPlaced[0], "playerpieces": self.playerpieces})
-					# self.player1.Send({"action": "place", "board": self.board_alt, "num": num, 
-					# 	"hasPlaced": playersHasPlaced[1], "playerpieces": self.playerpieces})
+					# for x in range(2):
+					# 	self.players[x].Send({"action": "place", "board": self.board, "num": num,
+					# 	"hasPlaced": playersHasPlaced[x], "playerpieces": self.playerpieces})
+					self.players[0].Send({"action": "place", "board": self.board, "num": num,
+						"hasPlaced": playersHasPlaced[0], "playerpieces": self.playerpieces})
+					self.players[1].Send({"action": "place", "board": self.board_alt, "num": num, 
+						"hasPlaced": playersHasPlaced[1], "playerpieces": self.playerpieces})
 
 					# allow the next turn if not rosette, else go again
 					if str(new_x) + str(new_y) not in rosette:
@@ -271,13 +271,13 @@ class Game:
 					self.playerpieces[num^1] += 1
 					self.playerpaths[num^1][GTOP[str(new_y)+str(new_x)][1]] = False
 
-					for x in range(2):
-						self.players[x].Send({"action": "place", "board": self.board, "num": num,
-						"hasPlaced": playersHasPlaced[x], "playerpieces": self.playerpieces})
+					# for x in range(2):
+					# 	self.players[x].Send({"action": "place", "board": self.board, "num": num,
+					# 	"hasPlaced": playersHasPlaced[x], "playerpieces": self.playerpieces})
 
-					self.player0.Send({"action": "place", "board": self.board, "num": num,
+					self.players[0].Send({"action": "place", "board": self.board, "num": num,
 						"hasPlaced": playersHasPlaced[0], "playerpieces": self.playerpieces})
-					self.player1.Send({"action": "place", "board": self.board_alt,"num": num, 
+					self.players[1].Send({"action": "place", "board": self.board_alt,"num": num, 
 						"hasPlaced": playersHasPlaced[1], "playerpieces": self.playerpieces})
 
 					# allow the next turn
@@ -295,21 +295,21 @@ class Game:
 				playersHasPlaced = [None, None]
 				playersHasPlaced[num] = True				
 
-				self.player0.Send({"action": "place", "board": self.board, "num": num,
+				self.players[0].Send({"action": "place", "board": self.board, "num": num,
 						"hasPlaced": playersHasPlaced[0], "playerpieces": self.playerpieces})
-				self.player1.Send({"action": "place", "board": self.board_alt,"num": num, 
+				self.players[1].Send({"action": "place", "board": self.board_alt,"num": num, 
 						"hasPlaced": playersHasPlaced[1], "playerpieces": self.playerpieces})
 
+				self.players[0].Send({"action": "score", "player0": self.playerscores[0],
+					"player1": self.playerscores[1]})
+				self.players[1].Send({"action": "score", "player0": self.playerscores[0],
+					"player1": self.playerscores[1]})
+
 				if self.playerscores[num] == NUM_OF_STONES:
-
-
+					for x in range(2):
+						self.players[x].Send({"action": "endgame", "num": num})
 
 				else:
-
-					self.player0.Send({"action": "score", "player0": self.playerscores[0],
-						"player1": self.playerscores[1]})
-					self.player1.Send({"action": "score", "player0": self.playerscores[0],
-						"player1": self.playerscores[1]})
 					# allow the next turn
 					self._nextTurn(self.turn)
 
@@ -332,8 +332,8 @@ class Game:
 		# relays the next turn
 		for x in range(2):
 			self.players[x].Send({"action": "yourTurn", "torf": playerTurns[x]})
-		# self.player0.Send({"action": "yourTurn", "torf": playerTurns[0]})
-		# self.player1.Send({"action": "yourTurn", "torf": playerTurns[1]})
+		# self.players[0].Send({"action": "yourTurn", "torf": playerTurns[0]})
+		# self.players[1].Send({"action": "yourTurn", "torf": playerTurns[1]})
 
 		for x in range(3):
 			print(self.board[x])
@@ -360,8 +360,8 @@ class Game:
 
 			for x in range(2):
 				self.players[x].Send({"action": "roll", "rolls": self.slt_mchn, "hasRolled": playerHasRolled[x], "num": num})
-			# self.player0.Send({"action": "roll", "rolls": self.slt_mchn, "hasRolled": playerHasRolled[0], "num": num})
-			# self.player1.Send({"action": "roll", "rolls": self.slt_mchn, "hasRolled": playerHasRolled[1], "num": num})
+			# self.players[0].Send({"action": "roll", "rolls": self.slt_mchn, "hasRolled": playerHasRolled[0], "num": num})
+			# self.players[1].Send({"action": "roll", "rolls": self.slt_mchn, "hasRolled": playerHasRolled[1], "num": num})
 
 			# check the valid spaces to allow highlights
 			valid = []
@@ -385,11 +385,12 @@ class Game:
 			
 
 					
-			if num == 0:
-				self.player0.Send({"action": "valid", "moveable": valid})
-			else:
-				self.player1.Send({"action": "valid", "moveable": valid})
+			# if num == 0:
+			# 	self.players[0].Send({"action": "valid", "moveable": valid})
+			# else:
+			# 	self.players[1].Send({"action": "valid", "moveable": valid})
 
+			self.players[num].Send({"action": "valid", "moveable": valid})
 
 			if numOfValid == 0:
 				self.lorTurn("lost", num)

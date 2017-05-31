@@ -96,6 +96,17 @@ class RoyalUr(ConnectionListener):
 			self.my_score = player1score
 			self.en_score = player0score
 
+	def Network_endgame(self, data):
+		num = data["num"]
+
+		if num == self.player_num:
+			# win
+			self.winlost = "win"
+
+		else:
+			# lose
+			self.winlost = "lose"
+
 	def __init__(self):
 		
 		# initialization stuff
@@ -140,6 +151,9 @@ class RoyalUr(ConnectionListener):
 		self.stone_colour = [None in range(2)]
 		self.my_stone_colour = None
 		self.en_stone_colour = None
+
+		# win lose variable
+		self.winlost = None
 
 		self.init_Graphics()
 
@@ -227,6 +241,8 @@ class RoyalUr(ConnectionListener):
 		# static labels
 		me_label = self.font32.render("You", 1, RGB["WHT"])
 		en_label = self.font32.render("Enemy", 1, RGB["WHT"])
+		self.win_label = self.font120.render("You Won!", 1, RGB["WHT"])
+		self.lose_label = self.font120.render("You Lost!", 1, RGB["WHT"])
 
 		# static screen
 		self.static_screen = self._rect((WINDOW_WIDTH, WINDOW_HEIGHT), RGB["BG_YLW"])
@@ -306,6 +322,11 @@ class RoyalUr(ConnectionListener):
 			else:
 				self.screen.blit(self.roll_btn_greenlight, roll_coord)
 
+		if self.winlost == "win":
+			self.screen.blit(self.win_label, (GRID*3, 0))
+		elif self.winlost == "lose":
+			self.screen.blit(self.lose_label, (GRID*3, 0))
+
 	def update(self):
 
 		self.justPlaced -= 1
@@ -371,6 +392,9 @@ class RoyalUr(ConnectionListener):
 					connection.Send({"action": "roll", "num": self.player_num, "hasRolled": self.hasRolled})
 					print("ATTEMPTING TO ROLL SENT")
 					self.justPlaced = 10
+
+				if self.winlost:
+					exit()
 
 		# update the screen
 		pygame.display.flip()
